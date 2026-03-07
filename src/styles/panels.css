@@ -181,6 +181,66 @@
 .wm-dl-toggle:hover { color: var(--text, #e8e8e8); }
 
 /* ----------------------------------------------------------
+   PWA Install Banner
+   ---------------------------------------------------------- */
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 950;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transform: translateY(110%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+}
+.pwa-install-banner.pwa-install-visible { transform: translateY(0); }
+.pwa-install-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.pwa-install-icon { font-size: 20px; flex-shrink: 0; }
+.pwa-install-text {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.pwa-install-text strong { color: var(--text); }
+.pwa-ios-share { font-size: 14px; }
+.pwa-install-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pwa-install-btn {
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pwa-install-btn:hover { opacity: 0.9; }
+.pwa-install-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.pwa-install-dismiss:hover { color: var(--text); }
+
+/* ----------------------------------------------------------
    Giving Panel (Global Giving Activity Index)
    ---------------------------------------------------------- */
 .giving-panel-content { font-size: 12px; }

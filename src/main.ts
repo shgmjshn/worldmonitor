@@ -1,7 +1,11 @@
 import './styles/base-layer.css';
 import './styles/happy-theme.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { capturePWAInstallPrompt } from './components/PWAInstallBanner';
 import * as Sentry from '@sentry/browser';
+
+// Capture beforeinstallprompt as early as possible (must be before first user interaction)
+capturePWAInstallPrompt();
 import { inject } from '@vercel/analytics';
 import { App } from './App';
 
