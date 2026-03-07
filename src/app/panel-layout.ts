@@ -208,7 +208,12 @@ export class PanelLayoutManager implements AppModule {
           ${SITE_VARIANT === 'happy' ? '<button class="tv-exit-btn" id="tvExitBtn">Exit TV Mode</button>' : ''}
           <div class="map-resize-handle" id="mapResizeHandle"></div>
         </div>
-        <div class="panels-grid" id="panelsGrid"></div>
+        ${this.ctx.isMobile ? `
+          <div class="mobile-bottom-sheet" id="mobileBottomSheet">
+            <div class="mobile-sheet-handle-bar" id="mobileSheetHandle"></div>
+            <div class="panels-grid" id="panelsGrid"></div>
+          </div>
+        ` : `<div class="panels-grid" id="panelsGrid"></div>`}
       </div>
     `;
 

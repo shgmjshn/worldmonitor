@@ -839,7 +839,7 @@ canvas,
 
 .panels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   grid-auto-flow: row dense;
   grid-auto-rows: minmax(200px, 380px);
   gap: 4px;
@@ -8985,25 +8985,47 @@ a.prediction-link:hover {
     display: none !important;
   }
 
-  /* Single-column panel layout on mobile */
-  .panels-grid {
+  /* main-content: positioning context for the absolute bottom sheet */
+  .main-content {
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Map fills the entire main-content area — bottom sheet overlays it */
+  .map-section {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    border: none !important;
+  }
+
+  /* Hide map header bar on mobile to maximise map area */
+  .map-section .panel-header {
+    display: none;
+  }
+
+  /* panels-grid and panels live inside the mobile bottom sheet */
+  .mobile-bottom-sheet .panels-grid {
     display: flex !important;
     flex-direction: column;
     gap: 8px;
-    padding: 8px;
+    padding: 8px 8px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    height: calc(100% - 48px);
+    overflow-y: hidden; /* JS sets to auto when sheet is fully open */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
-  .panel {
+  .mobile-bottom-sheet .panel {
     width: 100% !important;
-    min-height: 300px;
+    min-height: 280px;
     max-height: 400px;
-  }
-
-  /* Make map section smaller on mobile to show panels */
-  .map-section {
-    height: 40vh !important;
-    min-height: 250px !important;
-    max-height: 50vh !important;
+    flex-shrink: 0;
   }
 
   /* Hide pin button and resize handles on mobile */
@@ -9133,6 +9155,47 @@ a.prediction-link:hover {
   .conflict-click-area {
     cursor: pointer;
     pointer-events: auto;
+  }
+
+  /* ── Mobile Bottom Sheet ───────────────────────────────── */
+  .mobile-bottom-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: var(--surface);
+    border-radius: 16px 16px 0 0;
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    will-change: transform;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-bottom-sheet.sheet-transitioning {
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .mobile-sheet-handle-bar {
+    flex-shrink: 0;
+    height: 48px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 12px;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  .mobile-sheet-handle-bar::before {
+    content: '';
+    width: 40px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
   }
 }
 
@@ -15859,7 +15922,7 @@ body.has-breaking-alert .panels-grid {
     grid-column: 2;
     grid-row: 1;
     min-height: 0;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
     grid-auto-rows: minmax(200px, 380px);
     align-content: start;
     overflow-y: auto;

@@ -26,7 +26,20 @@ export async function fetchYahooQuotesBatch(
     }
     if (rateLimitHits >= 3 && results.size === 0) break;
   }
-  return { results, rateLimited: rateLimitHits >= 3 && results.size === 0 };
+
+  const yahooFailed = symbols.filter((s) => !results.has(s));
+  if (yahooFailed.length > 0) {
+    const fmpApiKey = process.env.FMP_API_KEY;
+    if (fmpApiKey) {
+      const fmpResults = await fetchFMPQuotesBatch(yahooFailed, fmpApiKey);
+      for (const [sym, data] of fmpResults) {
+        results.set(sym, data);
+      }
+    }
+  }
+
+  const stillMissing = symbols.filter((s) => !results.has(s)).length;
+  return { results, rateLimited: rateLimitHits >= 3 && results.size === 0 && stillMissing === symbols.length };
 }
 
 // Yahoo-only symbols: indices and futures not on Finnhub free tier
@@ -97,33 +110,70 @@ export async function fetchFinnhubQuote(
 // ========================================================================
 // Yahoo Finance quote fetcher
 // ========================================================================
-// TODO: Add Financial Modeling Prep (FMP) as Yahoo Finance fallback.
-//
-// FMP API docs: https://site.financialmodelingprep.com/developer/docs
-// Auth: API key required — env var FMP_API_KEY
-// Free tier: 250 requests/day (paid tiers for higher volume)
-//
-// Endpoint mapping (Yahoo → FMP):
-//   Quote:      /stable/quote?symbol=AAPL           (batch: comma-separated)
-//   Indices:    /stable/quote?symbol=^GSPC           (^GSPC, ^DJI, ^IXIC supported)
-//   Commodities:/stable/quote?symbol=GCUSD           (gold=GCUSD, oil=CLUSD, etc.)
-//   Forex:      /stable/batch-forex-quotes            (JPY/USD pairs)
-//   Crypto:     /stable/batch-crypto-quotes           (BTC, ETH, etc.)
-//   Sparkline:  /stable/historical-price-eod/light?symbol=AAPL  (daily close)
-//   Intraday:   /stable/historical-chart/1min?symbol=AAPL
-//
-// Symbol mapping needed:
-//   ^GSPC → ^GSPC (same), ^VIX → ^VIX (same)
-//   GC=F → GCUSD, CL=F → CLUSD, NG=F → NGUSD, SI=F → SIUSD, HG=F → HGUSD
-//   JPY=X → JPYUSD (forex pair format differs)
-//   BTC-USD → BTCUSD
-//
-// Implementation plan:
-//   1. Add FMP_API_KEY to SUPPORTED_SECRET_KEYS in main.rs + settings UI
-//   2. Create fetchFMPQuote() here returning same shape as fetchYahooQuote()
-//   3. fetchYahooQuote() tries Yahoo first → on 429/failure, tries FMP if key exists
-//   4. economic/_shared.ts fetchJSON() same fallback for Yahoo chart URLs
-//   5. get-macro-signals.ts needs chart data (1y range) — use /stable/historical-price-eod/light
+// ========================================================================
+// FMP (Financial Modeling Prep) — fallback for Yahoo Finance
+// ========================================================================
+
+/** Yahoo Finance symbol → FMP symbol mapping */
+const YAHOO_TO_FMP: Record<string, string> = {
+  'GC=F': 'GCUSD',
+  'CL=F': 'CLUSD',
+  'NG=F': 'NGUSD',
+  'SI=F': 'SIUSD',
+  'HG=F': 'HGUSD',
+  'JPY=X': 'JPYUSD',
+  'BTC-USD': 'BTCUSD',
+};
+
+function toFmpSymbol(yahooSymbol: string): string {
+  return YAHOO_TO_FMP[yahooSymbol] ?? yahooSymbol;
+}
+
+interface FmpQuote {
+  symbol: string;
+  price: number;
+  changesPercentage: number;
+  previousClose: number;
+}
+
+/**
+ * Fetch multiple quotes from FMP in a single batch request.
+ * Returns a Map of yahoo-symbol → { price, change }.
+ */
+export async function fetchFMPQuotesBatch(
+  yahooSymbols: string[],
+  apiKey: string,
+): Promise<Map<string, { price: number; change: number; sparkline: number[] }>> {
+  const result = new Map<string, { price: number; change: number; sparkline: number[] }>();
+  if (!yahooSymbols.length || !apiKey) return result;
+
+  const fmpSymbols = yahooSymbols.map(toFmpSymbol);
+  const url = `https://financialmodelingprep.com/stable/quote?symbol=${fmpSymbols.join(',')}&apikey=${apiKey}`;
+
+  try {
+    const resp = await fetch(url, {
+      headers: { Accept: 'application/json', 'User-Agent': CHROME_UA },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    if (!resp.ok) return result;
+
+    const data = await resp.json() as FmpQuote[];
+    if (!Array.isArray(data)) return result;
+
+    for (const q of data) {
+      // Find the original yahoo symbol that maps to this FMP symbol
+      const yahooSym = yahooSymbols.find(
+        (s) => toFmpSymbol(s).toUpperCase() === q.symbol.toUpperCase()
+      ) ?? q.symbol;
+      result.set(yahooSym, { price: q.price, change: q.changesPercentage, sparkline: [] });
+    }
+  } catch {
+    // best-effort
+  }
+
+  return result;
+}
+
 // ========================================================================
 
 export async function fetchYahooQuote(

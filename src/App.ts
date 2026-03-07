@@ -233,6 +233,7 @@ export class App {
       exportPanel: null,
       unifiedSettings: null,
       mobileWarningModal: null,
+      mobileBottomSheet: null,
       pizzintIndicator: null,
       countryBriefPage: null,
       countryTimeline: null,
