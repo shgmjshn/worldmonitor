@@ -142,15 +142,24 @@ export class PanelLayoutManager implements AppModule {
               <span class="variant-icon">📈</span>
               <span class="variant-label">${t('header.finance')}</span>
             </a>
-            ${SITE_VARIANT === 'happy' ? `<span class="variant-divider"></span>
+            <span class="variant-divider"></span>
+            <a href="${vHref('commodity', 'https://commodity.worldmonitor.app')}"
+               class="variant-option ${SITE_VARIANT === 'commodity' ? 'active' : ''}"
+               data-variant="commodity"
+               ${vTarget('commodity')}
+               title="COMMODITY${SITE_VARIANT === 'commodity' ? ` ${t('common.currentVariant')}` : ''}">
+              <span class="variant-icon">🛢️</span>
+              <span class="variant-label">COMMODITY</span>
+            </a>
+            <span class="variant-divider"></span>
             <a href="${vHref('happy', 'https://happy.worldmonitor.app')}"
-               class="variant-option active"
+               class="variant-option ${SITE_VARIANT === 'happy' ? 'active' : ''}"
                data-variant="happy"
                ${vTarget('happy')}
-               title="Good News ${t('common.currentVariant')}">
+               title="Good News${SITE_VARIANT === 'happy' ? ` ${t('common.currentVariant')}` : ''}">
               <span class="variant-icon">☀️</span>
               <span class="variant-label">Good News</span>
-            </a>` : ''}`;
+            </a>`;
           })()}</div>
           <span class="logo">MONITOR</span><span class="version">v${__APP_VERSION__}</span>${BETA_MODE ? '<span class="beta-badge">BETA</span>' : ''}
           <a href="https://x.com/eliehabib" target="_blank" rel="noopener" class="credit-link">
