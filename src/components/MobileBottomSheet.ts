@@ -42,6 +42,11 @@ export class MobileBottomSheet {
     this.applySnap('peek', false);
     this.setupTouchHandlers();
     window.addEventListener('resize', this.boundOnResize);
+
+    // Re-apply snap after layout settles — double-rAF ensures post-paint geometry
+    requestAnimationFrame(() => requestAnimationFrame(() => this.applySnap(this.currentSnap, false)));
+    // Belt-and-suspenders fallback for slow-paint environments
+    setTimeout(() => this.applySnap(this.currentSnap, false), 150);
   }
 
   // ── Snap geometry ──────────────────────────────────────────
@@ -106,10 +111,23 @@ export class MobileBottomSheet {
   // ── Touch handlers ─────────────────────────────────────────
 
   private setupTouchHandlers(): void {
+    // Primary: handle bar
     this.handleBar.addEventListener('touchstart', this.onTouchStart, { passive: true });
     this.handleBar.addEventListener('touchmove', this.onTouchMove, { passive: false });
     this.handleBar.addEventListener('touchend', this.onTouchEnd, { passive: true });
+    // Fallback: touches on the sheet background outside panels-grid also drag
+    this.element.addEventListener('touchstart', this.onSheetTouchStart, { passive: true });
+    this.element.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    this.element.addEventListener('touchend', this.onTouchEnd, { passive: true });
   }
+
+  // Sheet-level touch start: only drag if the touch is outside the panels-grid
+  private onSheetTouchStart = (e: TouchEvent): void => {
+    if (this.isDragging) return;
+    const target = e.target as Node;
+    if (this.panelsGrid.contains(target)) return; // let panels-grid handle its own scrolling
+    this.onTouchStart(e);
+  };
 
   private onTouchStart = (e: TouchEvent): void => {
     const touch = e.touches[0];
@@ -167,5 +185,8 @@ export class MobileBottomSheet {
     this.handleBar.removeEventListener('touchstart', this.onTouchStart);
     this.handleBar.removeEventListener('touchmove', this.onTouchMove);
     this.handleBar.removeEventListener('touchend', this.onTouchEnd);
+    this.element.removeEventListener('touchstart', this.onSheetTouchStart);
+    this.element.removeEventListener('touchmove', this.onTouchMove);
+    this.element.removeEventListener('touchend', this.onTouchEnd);
   }
 }

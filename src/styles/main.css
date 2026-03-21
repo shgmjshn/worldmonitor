@@ -1,3 +1,4 @@
+
 @import './rtl-overrides.css';
 @import './panels.css';
 
@@ -9183,7 +9184,7 @@ a.prediction-link:hover {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 12px;
+    padding-top: 14px;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
@@ -9192,10 +9193,14 @@ a.prediction-link:hover {
 
   .mobile-sheet-handle-bar::before {
     content: '';
-    width: 40px;
-    height: 4px;
-    background: var(--border-strong);
-    border-radius: 2px;
+    width: 48px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+  }
+
+  [data-theme="light"] .mobile-sheet-handle-bar::before {
+    background: rgba(0, 0, 0, 0.25);
   }
 }
 
